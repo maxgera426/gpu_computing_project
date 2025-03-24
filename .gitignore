@@ -1,0 +1,6 @@
+build/
+libs/
+.vscode/
+data/
+extra_doc/
+PlaneSweepInstall.pdf
