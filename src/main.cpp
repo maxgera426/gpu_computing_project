@@ -12,7 +12,7 @@
 #include <opencv2/opencv.hpp>
 
 #include <string>
-
+//test de git
 #define SHRT_MAX 32767
 
 std::vector<cam> read_cams(std::string const &folder)
