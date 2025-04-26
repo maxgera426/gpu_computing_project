@@ -1,6 +1,4 @@
 #include "../kernels/main.cuh"
-#include "cam_params.hpp"
-#include "constants.hpp"
 #include "graph.h"
 
 #include <cstdio>
@@ -282,10 +280,13 @@ int main()
 	std::vector<cam> cam_vector = read_cams("data");
 
 	// Test call a CUDA function
-	wrap_test_vectorAdd();
+	//wrap_test_vectorAdd();
 
 	// Sweeping algorithm for camera 0
-	std::vector<cv::Mat> cost_cube = sweeping_plane(cam_vector.at(0), cam_vector, 5);
+	//std::vector<cv::Mat> cost_cube = sweeping_plane(cam_vector.at(0), cam_vector, 5);
+
+	//Sweeping with cuda
+	std::vector<cv::Mat> cost_cube = sweeping_plane_naive(cam_vector.at(0), cam_vector, 5);
 
 	// Use graph cut to generate depth map 
 	// Cleaner results, long compute time

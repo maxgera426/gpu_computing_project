@@ -3,7 +3,7 @@
 #include <cmath>
 
 // Those functions are an example on how to call cuda functions from the main.cpp
-__global__ void sweeping_plane_naive(
+__global__ void naive_kernel(
 	//Reference data
 	double* ref_K_inv, double* ref_R_inv, double* ref_t_inv,
 	int ref_width, int ref_height, unsigned char* ref_Y,
@@ -13,7 +13,10 @@ __global__ void sweeping_plane_naive(
 	int cam_width, int cam_height, unsigned char* cam_Y,
 
 	//Output
-	float* cost_cube, int zi, int window
+	float* cost_cube, int zi, int window,
+
+	//Constants
+	float ZNear, float ZFar, int ZPlanes
 ) 
 {
 	int x = blockIdx.x * blockDim.x + threadIdx.x;
@@ -65,7 +68,7 @@ __global__ void sweeping_plane_naive(
 			int ref_idx = (y + k) * ref_width + (x + l);
 			int cam_idx = ((int)y_proj + k) * cam_width + ((int)x_proj + l);
 
-			cost += fabs(ref_Y[ref_idx] - cam_Y[cam_idx]);
+			cost += fabsf(ref_Y[ref_idx] - cam_Y[cam_idx]);
 
 			cc += 1.0f;
 		}
@@ -92,4 +95,105 @@ __device__ void atomicMinf(float* address, float val) {
 std::vector<cv::Mat> sweeping_plane_naive(cam const& ref, std::vector<cam> const& cam_vector, int window = 3) {
 	//function to call kernel
 	//returns cost_cube to be used in main.cpp
+	int width = ref.width;
+	int height = ref.height;
+	int total_size = width * height;
+
+	std::vector<float> cost_cube_data(total_size * ZPlanes, 255.0f);
+	float* d_cost_cube;
+	size_t cost_cube_size = total_size * ZPlanes * sizeof(float);
+	cudaMalloc((void**)&d_cost_cube, cost_cube_size);
+	cudaMemcpy(d_cost_cube, cost_cube_data.data(), cost_cube_size, cudaMemcpyHostToDevice);
+
+	double* d_ref_K_inv, * d_ref_R_inv, * d_ref_t_inv;
+	cudaMalloc((void**)&d_ref_K_inv, 9 * sizeof(double));
+	cudaMalloc((void**)&d_ref_R_inv, 9 * sizeof(double));
+	cudaMalloc((void**)&d_ref_t_inv, 3 * sizeof(double));
+
+	cudaMemcpy(d_ref_K_inv, ref.p.K_inv.data(), 9 * sizeof(double), cudaMemcpyHostToDevice);
+    cudaMemcpy(d_ref_R_inv, ref.p.R_inv.data(), 9 * sizeof(double), cudaMemcpyHostToDevice);
+    cudaMemcpy(d_ref_t_inv, ref.p.t_inv.data(), 3 * sizeof(double), cudaMemcpyHostToDevice);
+
+	unsigned char* d_ref_Y;
+    int ref_stride = ref.YUV[0].step[0];
+	std::cout << "ref stride: " << ref_stride << std::endl;
+	std::cout << "ref width: " << width << std::endl;
+	std::cout << "ref height: " << height << std::endl;
+    cudaMalloc(&d_ref_Y, height * ref_stride * sizeof(unsigned char));
+    cudaMemcpy(d_ref_Y, ref.YUV[0].data, height * ref_stride * sizeof(unsigned char), cudaMemcpyHostToDevice);
+
+	for (auto& cam : cam_vector){
+		if (cam.name == ref.name){
+			continue;
+		}
+
+		std::cout << "Cam: " << cam.name << std::endl;
+
+		double* d_cam_K, * d_cam_R, * d_cam_t;
+		cudaMalloc((void**)&d_cam_K, 9 * sizeof(double));
+		cudaMalloc((void**)&d_cam_R, 9 * sizeof(double));
+		cudaMalloc((void**)&d_cam_t, 3 * sizeof(double));
+
+		cudaMemcpy(d_cam_K, cam.p.K.data(), 9 * sizeof(double), cudaMemcpyHostToDevice);
+        cudaMemcpy(d_cam_R, cam.p.R.data(), 9 * sizeof(double), cudaMemcpyHostToDevice);
+        cudaMemcpy(d_cam_t, cam.p.t.data(), 3 * sizeof(double), cudaMemcpyHostToDevice);
+
+		unsigned char* d_cam_Y;
+        int cam_stride = cam.YUV[0].step[0];
+		std::cout << "cam stride: " << cam_stride << std::endl;
+		std::cout << "cam width: " << cam.width << std::endl;
+		std::cout << "cam height: " << cam.height << std::endl;
+        cudaMalloc(&d_cam_Y, cam.height * cam_stride * sizeof(unsigned char));
+        cudaMemcpy(d_cam_Y, cam.YUV[0].data, cam.height * cam_stride * sizeof(unsigned char), cudaMemcpyHostToDevice);
+        
+		dim3 blockDim(16, 16);
+        dim3 gridDim((width + blockDim.x - 1) / blockDim.x, (height + blockDim.y - 1) / blockDim.y);
+        
+		for (int zi = 0; zi < ZPlanes; zi++) {
+            std::cout << "Plane " << zi << std::endl;
+            
+            // Launch kernel
+            naive_kernel<<<gridDim, blockDim>>>(
+                d_ref_K_inv, d_ref_R_inv, d_ref_t_inv,
+                 width, height, d_ref_Y,
+                d_cam_K, d_cam_R, d_cam_t,
+                cam.width, cam.height, d_cam_Y,
+                d_cost_cube, zi, window,
+				ZNear, ZFar, ZPlanes
+            );
+
+			// Check for errors
+            cudaError_t error = cudaGetLastError();
+            if (error != cudaSuccess) {
+                std::cerr << "CUDA error: " << cudaGetErrorString(error) << std::endl;
+            }
+		}
+		
+		cudaFree(d_cam_K);
+        cudaFree(d_cam_R);
+        cudaFree(d_cam_t);
+        cudaFree(d_cam_Y); 
+	}
+
+	cudaMemcpy(cost_cube_data.data(), d_cost_cube, cost_cube_size, cudaMemcpyDeviceToHost);
+
+	std::vector<cv::Mat> result(ZPlanes);
+    for (int i = 0; i < ZPlanes; ++i) {
+        result[i] = cv::Mat(height, width, CV_32FC1);
+        // Copy the appropriate slice of the cost_cube_data into the cv::Mat
+        for (int y = 0; y < height; ++y) {
+            for (int x = 0; x < width; ++x) {
+                int index = i * width * height + y * width + x;
+                result[i].at<float>(y, x) = cost_cube_data[index];
+            }
+        }
+    }
+
+	cudaFree(d_ref_K_inv);
+    cudaFree(d_ref_R_inv);
+    cudaFree(d_ref_t_inv);
+    cudaFree(d_ref_Y);
+    cudaFree(d_cost_cube);
+
+	return result;
 }
