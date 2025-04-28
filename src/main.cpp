@@ -288,6 +288,15 @@ int main()
 	//Sweeping with cuda
 	std::vector<cv::Mat> cost_cube = sweeping_plane_naive(cam_vector.at(0), cam_vector, 5);
 
+	// for (int zi = 0; zi < ZPlanes; zi++)
+	// {
+	// 	std::cout << "plane " << zi << std::endl;
+	// 	cv::namedWindow("Cost", cv::WINDOW_NORMAL);
+	// 	cv::imshow("Cost", cost_cube.at(zi) / 255.f);
+	// 	cv::waitKey(0);
+	// }
+
+
 	// Use graph cut to generate depth map 
 	// Cleaner results, long compute time
 	cv::Mat depth = depth_estimation_by_graph_cut_sWeight(cost_cube);

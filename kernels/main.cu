@@ -17,7 +17,7 @@ __global__ void naive_kernel(
 
 	//Constants
 	float ZNear, float ZFar, int ZPlanes
-) 
+)
 {
 	int x = blockIdx.x * blockDim.x + threadIdx.x;
 	int y = blockIdx.y * blockDim.y + threadIdx.y;
@@ -75,7 +75,7 @@ __global__ void naive_kernel(
 	}
 	cost /= cc;
 
-	int cost_idx = y * ref_width + x;
+	int cost_idx = zi* ref_width * ref_height + y * ref_width + x;
 
 	// Store minimum cost (atomic to handle concurrent updates from different cameras)
 	atomicMinf(&cost_cube[cost_idx], cost);
@@ -183,12 +183,12 @@ std::vector<cv::Mat> sweeping_plane_naive(cam const& ref, std::vector<cam> const
         // Copy the appropriate slice of the cost_cube_data into the cv::Mat
         for (int y = 0; y < height; ++y) {
             for (int x = 0; x < width; ++x) {
-                int index = i * width * height + y * width + x;
+				int index = i * width * height + y * width + x;
                 result[i].at<float>(y, x) = cost_cube_data[index];
             }
         }
+		//printf("%d, ", result[i]);
     }
-
 	cudaFree(d_ref_K_inv);
     cudaFree(d_ref_R_inv);
     cudaFree(d_ref_t_inv);
