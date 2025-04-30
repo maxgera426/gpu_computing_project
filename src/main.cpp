@@ -8,8 +8,10 @@
 #include <opencv2/imgcodecs.hpp>
 #include <opencv2/imgproc.hpp>
 #include <opencv2/opencv.hpp>
-
+#include <chrono>
+#include <iostream>
 #include <string>
+
 //test de git
 #define SHRT_MAX 32767
 
@@ -275,7 +277,9 @@ cv::Mat depth_estimation_by_graph_cut_sWeight(std::vector<cv::Mat> const& cost_c
 }
 
 int main()
-{
+{	
+	//Start timer
+	auto start = std::chrono::high_resolution_clock::now();
 	// Read cams
 	std::vector<cam> cam_vector = read_cams("data");
 
@@ -286,7 +290,15 @@ int main()
 	//std::vector<cv::Mat> cost_cube = sweeping_plane(cam_vector.at(0), cam_vector, 5);
 
 	//Sweeping with cuda
-	std::vector<cv::Mat> cost_cube = sweeping_plane_naive(cam_vector.at(0), cam_vector, 5);
+	//std::vector<cv::Mat> cost_cube = sweeping_plane_naive(cam_vector.at(0), cam_vector, 5);
+	std::vector<cv::Mat> cost_cube = sweeping_plane_float_naive(cam_vector.at(0), cam_vector, 5);
+	
+	//Stop timer
+	auto end = std::chrono::high_resolution_clock::now();
+
+	// Print time duration of algorithm
+	std::chrono::duration<double> elapsed = end - start;
+	std::cout << "Elapsed time: " << elapsed.count() * 1000 << " ms" << std::endl;
 
 	// for (int zi = 0; zi < ZPlanes; zi++)
 	// {
@@ -305,10 +317,13 @@ int main()
 	// Faster result, low quality
 	//cv::Mat depth = find_min(cost_cube);
 
+	
 
 	cv::namedWindow("Depth", cv::WINDOW_NORMAL);
 	cv::imshow("Depth", depth);
 	cv::waitKey(0);
+
+
 
 	cv::imwrite("./depth_map.png", depth);
 
