@@ -291,8 +291,11 @@ int main()
 
 	//Sweeping with cuda
 	//std::vector<cv::Mat> cost_cube = sweeping_plane_naive(cam_vector.at(0), cam_vector, 5);
-	std::vector<cv::Mat> cost_cube = sweeping_plane_float_naive(cam_vector.at(0), cam_vector, 5);
-	
+	//std::vector<cv::Mat> cost_cube = sweeping_plane_float_naive(cam_vector.at(0), cam_vector, 5);
+	std::vector<cv::Mat> cost_cube = sweeping_plane_full_cam(cam_vector.at(0), cam_vector, 5);
+
+
+
 	//Stop timer
 	auto end = std::chrono::high_resolution_clock::now();
 
@@ -311,11 +314,11 @@ int main()
 
 	// Use graph cut to generate depth map 
 	// Cleaner results, long compute time
-	//cv::Mat depth = depth_estimation_by_graph_cut_sWeight(cost_cube);
+	cv::Mat depth = depth_estimation_by_graph_cut_sWeight(cost_cube);
 
 	// Find min cost and generate depth map
 	// Faster result, low quality
-	cv::Mat depth = find_min(cost_cube);
+	//cv::Mat depth = find_min(cost_cube);
 
 	
 
