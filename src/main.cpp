@@ -311,11 +311,11 @@ int main()
 
 	// Use graph cut to generate depth map 
 	// Cleaner results, long compute time
-	cv::Mat depth = depth_estimation_by_graph_cut_sWeight(cost_cube);
+	//cv::Mat depth = depth_estimation_by_graph_cut_sWeight(cost_cube);
 
 	// Find min cost and generate depth map
 	// Faster result, low quality
-	//cv::Mat depth = find_min(cost_cube);
+	cv::Mat depth = find_min(cost_cube);
 
 	
 

@@ -52,6 +52,7 @@ __global__ void naive_kernel(
 
 	float cost = 0.0f;
 	float cc = 0.0f;
+
 	for (int k = -window / 2; k <= window / 2; k++)
 	{
 		for (int l = -window / 2; l <= window / 2; l++)
@@ -77,8 +78,9 @@ __global__ void naive_kernel(
 
 	int cost_idx = zi* ref_width * ref_height + y * ref_width + x;
 
-	// Store minimum cost (atomic to handle concurrent updates from different cameras)
-	atomicMinf(&cost_cube[cost_idx], cost);
+    if (cost_cube[cost_idx] > cost) {
+        cost_cube[cost_idx] = cost;
+    }
 }
 
 __global__ void float_naive_kernel(
@@ -153,19 +155,9 @@ __global__ void float_naive_kernel(
 
 	int cost_idx = zi * ref_width * ref_height + y * ref_width + x;
 
-	// Store minimum cost (atomic to handle concurrent updates from different cameras)
-	atomicMinf(&cost_cube[cost_idx], cost);
-}
-
-__device__ void atomicMinf(float* address, float val) {
-	int* address_as_int = (int*)address;
-	int old = *address_as_int;
-	int assumed;
-	do {
-		assumed = old;
-		old = atomicCAS(address_as_int, assumed,
-			__float_as_int(fminf(val, __int_as_float(assumed))));
-	} while (assumed != old);
+	if (cost_cube[cost_idx] > cost) {
+		cost_cube[cost_idx] = cost;
+	}
 }
 
 std::vector<cv::Mat> sweeping_plane_naive(cam const& ref, std::vector<cam> const& cam_vector, int window = 3) {
