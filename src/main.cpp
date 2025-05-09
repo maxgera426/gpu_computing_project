@@ -293,9 +293,8 @@ int main()
 	//std::vector<cv::Mat> cost_cube = sweeping_plane_naive(cam_vector.at(0), cam_vector, 5);
 	//std::vector<cv::Mat> cost_cube = sweeping_plane_float_naive(cam_vector.at(0), cam_vector, 5);
 	//std::vector<cv::Mat> cost_cube = sweeping_plane_full_cam(cam_vector.at(0), cam_vector, 5);
-	std::vector<cv::Mat> cost_cube = sweeping_plane_reduced_maxtrix(cam_vector.at(0), cam_vector, 5);
-
-
+	std::vector<cv::Mat> cost_cube = sweeping_plane_constant_mem(cam_vector.at(0), cam_vector, 5);
+	//std::vector<cv::Mat> cost_cube = sweeping_plane_reduced_maxtrix(cam_vector.at(0), cam_vector, 5);
 
 	//Stop timer
 	auto end = std::chrono::high_resolution_clock::now();
@@ -304,13 +303,13 @@ int main()
 	std::chrono::duration<double> elapsed = end - start;
 	std::cout << "Elapsed time: " << elapsed.count() * 1000 << " ms" << std::endl;
 
-	// for (int zi = 0; zi < ZPlanes; zi++)
-	// {
-	// 	std::cout << "plane " << zi << std::endl;
-	// 	cv::namedWindow("Cost", cv::WINDOW_NORMAL);
-	// 	cv::imshow("Cost", cost_cube.at(zi) / 255.f);
-	// 	cv::waitKey(0);
-	// }
+	//for (int zi = 0; zi < ZPlanes; zi++)
+	//{
+	//	std::cout << "plane " << zi << std::endl;
+	//	cv::namedWindow("Cost", cv::WINDOW_NORMAL);
+	//	cv::imshow("Cost", cost_cube.at(zi) / 255.f);
+	//	cv::waitKey(0);
+	//}
 
 
 	// Use graph cut to generate depth map 
