@@ -293,12 +293,11 @@ int main()
 	//std::vector<cv::Mat> cost_cube = sweeping_plane_naive(cam_vector.at(0), cam_vector, 5);
 	//std::vector<cv::Mat> cost_cube = sweeping_plane_float_naive(cam_vector.at(0), cam_vector, 5);
 	//std::vector<cv::Mat> cost_cube = sweeping_plane_full_cam(cam_vector.at(0), cam_vector, 5);
-	std::vector<cv::Mat> cost_cube = sweeping_plane_constant_mem(cam_vector.at(0), cam_vector, 5);
-	//std::vector<cv::Mat> cost_cube = sweeping_plane_reduced_maxtrix(cam_vector.at(0), cam_vector, 5);
+	//std::vector<cv::Mat> cost_cube = sweeping_plane_constant_mem(cam_vector.at(0), cam_vector, 5);
+	std::vector<cv::Mat> cost_cube = sweeping_plane_reduced_maxtrix(cam_vector.at(0), cam_vector, 5);
 
 	//Stop timer
 	auto end = std::chrono::high_resolution_clock::now();
-
 	// Print time duration of algorithm
 	std::chrono::duration<double> elapsed = end - start;
 	std::cout << "Elapsed time: " << elapsed.count() * 1000 << " ms" << std::endl;
