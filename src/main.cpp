@@ -294,7 +294,9 @@ int main()
 	//std::vector<cv::Mat> cost_cube = sweeping_plane_float_naive(cam_vector.at(0), cam_vector, 5);
 	//std::vector<cv::Mat> cost_cube = sweeping_plane_full_cam(cam_vector.at(0), cam_vector, 5);
 	//std::vector<cv::Mat> cost_cube = sweeping_plane_constant_mem(cam_vector.at(0), cam_vector, 5);
-	std::vector<cv::Mat> cost_cube = sweeping_plane_reduced_maxtrix(cam_vector.at(0), cam_vector, 5);
+	//std::vector<cv::Mat> cost_cube = sweeping_plane_reduced_maxtrix(cam_vector.at(0), cam_vector, 5);
+	std::vector<cv::Mat> cost_cube = sweeping_plane_test(cam_vector.at(0), cam_vector, 5);
+
 
 	//Stop timer
 	auto end = std::chrono::high_resolution_clock::now();
