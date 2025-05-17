@@ -15,3 +15,5 @@ std::vector<cv::Mat> sweeping_plane_reduced_maxtrix(cam const& ref, std::vector<
 std::vector<cv::Mat>  sweeping_plane_constant_mem(cam const& ref, std::vector<cam> const& cam_vector, int window);
 std::vector<cv::Mat>  sweeping_plane_constant_mem_matrix(cam const& ref, std::vector<cam> const& cam_vector, int window);
 std::vector<cv::Mat>  sweeping_plane_grid3d(cam const& ref, std::vector<cam> const& cam_vector, int window);
+std::vector<cv::Mat>  sweeping_plane_grid3d_shared_ref(cam const& ref, std::vector<cam> const& cam_vector, int window);
+std::vector<cv::Mat>  sweeping_plane_grid3d_shared_both(cam const& ref, std::vector<cam> const& cam_vector, int window);
