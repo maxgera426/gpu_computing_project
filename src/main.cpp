@@ -279,13 +279,13 @@ cv::Mat depth_estimation_by_graph_cut_sWeight(std::vector<cv::Mat> const& cost_c
 int main()
 {	
 	//Start timer
-	
+	auto start = std::chrono::high_resolution_clock::now();
 	// Read cams
 	std::vector<cam> cam_vector = read_cams("data");
 
 	// Test call a CUDA function
 	//wrap_test_vectorAdd();
-	auto start = std::chrono::high_resolution_clock::now();
+
 	// Sweeping algorithm for camera 0
 	//std::vector<cv::Mat> cost_cube = sweeping_plane(cam_vector.at(0), cam_vector, 5);
 
@@ -298,7 +298,8 @@ int main()
 	//std::vector<cv::Mat> cost_cube = sweeping_plane_constant_mem_matrix(cam_vector.at(0), cam_vector, 5);
 	//std::vector<cv::Mat> cost_cube = sweeping_plane_grid3d(cam_vector.at(0), cam_vector, 5);
 	//std::vector<cv::Mat> cost_cube = sweeping_plane_grid3d_shared_ref(cam_vector.at(0), cam_vector, 5);
-	std::vector<cv::Mat> cost_cube = sweeping_plane_grid3d_shared_ref_2(cam_vector.at(0), cam_vector, 5);
+	//std::vector<cv::Mat> cost_cube = sweeping_plane_grid3d_shared_ref_2(cam_vector.at(0), cam_vector, 5);
+	std::vector<cv::Mat> cost_cube = sweeping_plane_grid3d_shared_ref_3(cam_vector.at(0), cam_vector, 5);
 
 
 
