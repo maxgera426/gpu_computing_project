@@ -298,8 +298,7 @@ int main()
 	//std::vector<cv::Mat> cost_cube = sweeping_plane_constant_mem_matrix(cam_vector.at(0), cam_vector, 5);
 	//std::vector<cv::Mat> cost_cube = sweeping_plane_grid3d(cam_vector.at(0), cam_vector, 5);
 	//std::vector<cv::Mat> cost_cube = sweeping_plane_grid3d_shared_ref(cam_vector.at(0), cam_vector, 5);
-	//std::vector<cv::Mat> cost_cube = sweeping_plane_grid3d_shared_ref_2(cam_vector.at(0), cam_vector, 5);
-	std::vector<cv::Mat> cost_cube = sweeping_plane_grid3d_shared_both(cam_vector.at(0), cam_vector, 5);
+	std::vector<cv::Mat> cost_cube = sweeping_plane_grid3d_shared_ref_2(cam_vector.at(0), cam_vector, 5);
 
 
 
