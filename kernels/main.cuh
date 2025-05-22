@@ -15,6 +15,7 @@ std::vector<cv::Mat>  sweeping_plane_constant_mem_matrix(cam const& ref, std::ve
 std::vector<cv::Mat>  sweeping_plane_grid3d(cam const& ref, std::vector<cam> const& cam_vector, int window);
 std::vector<cv::Mat>  sweeping_plane_grid3d_shared_ref(cam const& ref, std::vector<cam> const& cam_vector, int window);
 std::vector<cv::Mat>  sweeping_plane_grid3d_shared_ref_2(cam const& ref, std::vector<cam> const& cam_vector, int window);
-std::vector<cv::Mat>  sweeping_plane_grid3d_shared_ref_3(cam const& ref, std::vector<cam> const& cam_vector, int window);
+std::vector<cv::Mat>  sweeping_plane_final_shared(cam const& ref, std::vector<cam> const& cam_vector, int window);
+std::vector<cv::Mat>  sweeping_plane_final_not_shared(cam const& ref, std::vector<cam> const& cam_vector, int window);
 
 

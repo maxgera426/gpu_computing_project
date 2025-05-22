@@ -296,10 +296,12 @@ int main()
 	//std::vector<cv::Mat> cost_cube = sweeping_plane_constant_mem(cam_vector.at(0), cam_vector, 5);
 	//std::vector<cv::Mat> cost_cube = sweeping_plane_reduced_maxtrix(cam_vector.at(0), cam_vector, 5);
 	//std::vector<cv::Mat> cost_cube = sweeping_plane_constant_mem_matrix(cam_vector.at(0), cam_vector, 5);
+	
 	//std::vector<cv::Mat> cost_cube = sweeping_plane_grid3d(cam_vector.at(0), cam_vector, 5);
 	//std::vector<cv::Mat> cost_cube = sweeping_plane_grid3d_shared_ref(cam_vector.at(0), cam_vector, 5);
 	//std::vector<cv::Mat> cost_cube = sweeping_plane_grid3d_shared_ref_2(cam_vector.at(0), cam_vector, 5);
-	std::vector<cv::Mat> cost_cube = sweeping_plane_grid3d_shared_ref_3(cam_vector.at(0), cam_vector, 5);
+	//std::vector<cv::Mat> cost_cube = sweeping_plane_final_shared(cam_vector.at(0), cam_vector, 5);
+	std::vector<cv::Mat> cost_cube = sweeping_plane_final_not_shared(cam_vector.at(0), cam_vector, 5);
 
 
 
@@ -320,11 +322,11 @@ int main()
 
 	// Use graph cut to generate depth map 
 	// Cleaner results, long compute time
-	//cv::Mat depth = depth_estimation_by_graph_cut_sWeight(cost_cube);
+	cv::Mat depth = depth_estimation_by_graph_cut_sWeight(cost_cube);
 
 	// Find min cost and generate depth map
 	// Faster result, low quality
-	cv::Mat depth = find_min(cost_cube);
+	//cv::Mat depth = find_min(cost_cube);
 
 	
 

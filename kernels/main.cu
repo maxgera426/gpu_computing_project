@@ -2051,7 +2051,7 @@ __global__ void init_cost_cube_kernel(float* data, float value, int size) {
     }
 }
 
-std::vector<cv::Mat> sweeping_plane_final(cam const& ref, std::vector<cam> const& cam_vector, int window = 3) {
+std::vector<cv::Mat> sweeping_plane_final_shared(cam const& ref, std::vector<cam> const& cam_vector, int window = 3) {
     int width = ref.width;
     int height = ref.height;
     int total_size = width * height;
@@ -2066,7 +2066,7 @@ std::vector<cv::Mat> sweeping_plane_final(cam const& ref, std::vector<cam> const
     int threadsPerBlock = 256;
     int blocksPerGrid = (total_elements + threadsPerBlock - 1) / threadsPerBlock;
     init_cost_cube_kernel << <blocksPerGrid, threadsPerBlock >> > (d_cost_cube, 255.0f, total_elements);
-    cudaDeviceSynchronize();
+    //cudaDeviceSynchronize();
 
     std::vector<float> h_planes(ZPlanes);
     for (int zi = 0; zi < ZPlanes; ++zi) {
@@ -2194,6 +2194,133 @@ std::vector<cv::Mat> sweeping_plane_final(cam const& ref, std::vector<cam> const
 
     // Copy results back to host
     cudaMemcpy(cost_cube_data.data(), d_cost_cube, cost_cube_size, cudaMemcpyDeviceToHost);
+
+    // Convert to OpenCV matrices
+    std::vector<cv::Mat> result(ZPlanes);
+    for (int i = 0; i < ZPlanes; ++i) {
+        result[i] = cv::Mat(height, width, CV_32FC1, cost_cube_data.data() + i * width * height).clone();
+    }
+
+    // Free reference resources
+    cudaFree(d_ref_Y);
+    cudaFree(d_cost_cube);
+
+    return result;
+}
+
+std::vector<cv::Mat> sweeping_plane_final_not_shared(cam const& ref, std::vector<cam> const& cam_vector, int window = 3) {
+    int width = ref.width;
+    int height = ref.height;
+    int total_size = width * height;
+
+    // Initialize cost cube with max values
+    // Initialize cost cube with max values
+    std::vector<float> cost_cube_data(total_size * ZPlanes);
+    float* d_cost_cube;
+    int total_elements = total_size * ZPlanes;
+    size_t cost_cube_size = total_elements * sizeof(float);
+    cudaMalloc(&d_cost_cube, cost_cube_size);
+
+    int threadsPerBlock = 256;
+    int blocksPerGrid = (total_elements + threadsPerBlock - 1) / threadsPerBlock;
+    init_cost_cube_kernel << <blocksPerGrid, threadsPerBlock >> > (d_cost_cube, 255.0f, total_elements);
+    //cudaDeviceSynchronize();
+
+    // Convert reference camera matrices to float
+    std::vector<float> ref_K_inv_float(9), ref_R_inv_float(9), ref_t_inv_float(3);
+    for (int i = 0; i < 9; i++) {
+        if (i < 3) ref_t_inv_float[i] = static_cast<float>(ref.p.t_inv[i]);
+        ref_K_inv_float[i] = static_cast<float>(ref.p.K_inv[i]);
+        ref_R_inv_float[i] = static_cast<float>(ref.p.R_inv[i]);
+    }
+    // Allocate and copy reference image
+    unsigned char* d_ref_Y;
+    int ref_stride = ref.YUV[0].step[0];
+    cudaMalloc(&d_ref_Y, height * ref_stride * sizeof(unsigned char));
+    cudaMemcpy(d_ref_Y, ref.YUV[0].data, height * ref_stride * sizeof(unsigned char), cudaMemcpyHostToDevice);
+    for (auto& cam : cam_vector) {
+        if (cam.name == ref.name) {
+            continue;
+        }
+        std::cout << "Cam: " << cam.name << std::endl;
+
+        // Convert camera matrices to float
+        std::vector<float> cam_K_float(9), cam_R_float(9), cam_t_float(3);
+        for (int i = 0; i < 9; i++) {
+            if (i < 3) cam_t_float[i] = static_cast<float>(cam.p.t[i]);
+            cam_K_float[i] = static_cast<float>(cam.p.K[i]);
+            cam_R_float[i] = static_cast<float>(cam.p.R[i]);
+        }
+
+        // Matrix multiplication cam_R* ref_R_inv * ref_K_inv
+        std::vector<float> temporary(9);
+        for (int i = 0; i < 3; i++) {
+            for (int j = 0; j < 3; j++) {
+                float sum = 0.0;
+                for (int k = 0; k < 3; k++) {
+                    sum += cam_R_float[i * 3 + k] * ref_R_inv_float[k * 3 + j];
+                }
+                temporary[i * 3 + j] = sum;
+            }
+        }
+
+        std::vector<float> R_cam_RK_ref(9);
+        for (int i = 0; i < 3; i++) {
+            for (int j = 0; j < 3; j++) {
+                float sum = 0.0;
+                for (int k = 0; k < 3; k++) {
+                    sum += temporary[i * 3 + k] * ref_K_inv_float[k * 3 + j];
+                }
+                R_cam_RK_ref[i * 3 + j] = sum;
+            }
+        }
+
+        std::vector<float> RT_cam_T_ref(3);
+        for (int i = 0; i < 3; i++) {
+            float sum = 0.0;
+            for (int j = 0; j < 3; j++) {
+                sum += cam_R_float[i * 3 + j] * cam_t_float[j];
+            }
+            RT_cam_T_ref[i] = sum + ref_t_inv_float[i];
+        }
+
+        // Allocate and copy matrices
+        cudaMemcpyToSymbol(d_cam_K, cam_K_float.data(), 9 * sizeof(float));
+        cudaMemcpyToSymbol(d_R_cam_RK_ref, R_cam_RK_ref.data(), 9 * sizeof(float));
+        cudaMemcpyToSymbol(d_RT_cam_T_ref, RT_cam_T_ref.data(), 3 * sizeof(float));
+
+        // Allocate and copy camera image
+        unsigned char* d_cam_Y;
+        int cam_stride = cam.YUV[0].step[0];
+        cudaMalloc(&d_cam_Y, cam.height * cam_stride * sizeof(unsigned char));
+        cudaMemcpy(d_cam_Y, cam.YUV[0].data, cam.height * cam_stride * sizeof(unsigned char), cudaMemcpyHostToDevice);
+
+        // Set kernel launch parameters
+        dim3 blockDim(16, 16, 4);
+        dim3 gridDim((width + blockDim.x - 1) / blockDim.x, (height + blockDim.y - 1) / blockDim.y, (ZPlanes + blockDim.z - 1) / blockDim.z);
+
+        // Launch kernel with float parameters
+        constant_memory_matrix_kernel << <gridDim, blockDim >> > (
+            width, height, d_ref_Y,
+            cam.width, cam.height, d_cam_Y,
+            d_cost_cube, window,
+            static_cast<float>(ZNear), static_cast<float>(ZFar), ZPlanes
+            );
+
+        // Check for errors
+        cudaError_t error = cudaGetLastError();
+        if (error != cudaSuccess) {
+            std::cerr << "CUDA error: " << cudaGetErrorString(error) << std::endl;
+
+        }
+
+        // Free camera resources
+        cudaFree(d_cam_Y);
+    }
+
+    // Copy results back to host
+    cudaMemcpy(cost_cube_data.data(), d_cost_cube, cost_cube_size, cudaMemcpyDeviceToHost);
+
 
     // Convert to OpenCV matrices
     std::vector<cv::Mat> result(ZPlanes);
