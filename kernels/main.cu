@@ -837,15 +837,13 @@ __global__ void grid3d_shared_ref_2_kernel(
         }
     }
 
-
-
     // Ensure all threads have loaded data into shared memory
     __syncthreads();
 
 
 
     // Calculate depth for this plane
-    float z = d_planes[zi]; //= ZNear * ZFar / (ZNear + (((float)zi / (float)ZPlanes) * (ZFar - ZNear)));
+    float z = d_planes[zi];
 
     // 3D world to projected camera 3D coordinates
     float X_proj = (d_R_cam_RK_ref[0] * x + d_R_cam_RK_ref[1] * y + d_R_cam_RK_ref[2]) * z - d_RT_cam_T_ref[0];
@@ -920,9 +918,7 @@ std::vector<cv::Mat> sweeping_plane_naive(cam const& ref, std::vector<cam> const
 
 	unsigned char* d_ref_Y;
     int ref_stride = ref.YUV[0].step[0];
-	std::cout << "ref stride: " << ref_stride << std::endl;
-	std::cout << "ref width: " << width << std::endl;
-	std::cout << "ref height: " << height << std::endl;
+
     cudaMalloc(&d_ref_Y, height * ref_stride * sizeof(unsigned char));
     cudaMemcpy(d_ref_Y, ref.YUV[0].data, height * ref_stride * sizeof(unsigned char), cudaMemcpyHostToDevice);
 
@@ -944,9 +940,7 @@ std::vector<cv::Mat> sweeping_plane_naive(cam const& ref, std::vector<cam> const
 
 		unsigned char* d_cam_Y;
         int cam_stride = cam.YUV[0].step[0];
-		std::cout << "cam stride: " << cam_stride << std::endl;
-		std::cout << "cam width: " << cam.width << std::endl;
-		std::cout << "cam height: " << cam.height << std::endl;
+
         cudaMalloc(&d_cam_Y, cam.height * cam_stride * sizeof(unsigned char));
         cudaMemcpy(d_cam_Y, cam.YUV[0].data, cam.height * cam_stride * sizeof(unsigned char), cudaMemcpyHostToDevice);
         
@@ -1160,9 +1154,7 @@ std::vector<cv::Mat> sweeping_plane_full_cam(cam const& ref, std::vector<cam> co
     // Allocate and copy reference image
     unsigned char* d_ref_Y;
     int ref_stride = ref.YUV[0].step[0];
-    std::cout << "ref stride: " << ref_stride << std::endl;
-    std::cout << "ref width: " << width << std::endl;
-    std::cout << "ref height: " << height << std::endl;
+
     cudaMalloc(&d_ref_Y, height * ref_stride * sizeof(unsigned char));
     cudaMemcpy(d_ref_Y, ref.YUV[0].data, height * ref_stride * sizeof(unsigned char), cudaMemcpyHostToDevice);
 
@@ -1366,7 +1358,6 @@ std::vector<cv::Mat> sweeping_plane_reduced_maxtrix(cam const& ref, std::vector<
         ref_K_inv_float[i] = static_cast<float>(ref.p.K_inv[i]);
         ref_R_inv_float[i] = static_cast<float>(ref.p.R_inv[i]);
     }
-
 
     // Allocate and copy reference image
     unsigned char* d_ref_Y;
@@ -2146,8 +2137,8 @@ std::vector<cv::Mat> sweeping_plane_final_shared(cam const& ref, std::vector<cam
         cudaMemcpy(d_cam_Y, cam.YUV[0].data, cam.height * cam_stride * sizeof(unsigned char), cudaMemcpyHostToDevice);
 
         // Set 2D block dimensions
-        dim3 blockDim(32, 32);
-        //dim3 blockDim(16, 16);
+        //dim3 blockDim(32, 32);
+        dim3 blockDim(16, 16);
 
         // Calculate padding for shared memory
         int padding = window / 2;
